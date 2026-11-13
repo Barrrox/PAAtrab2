@@ -77,51 +77,75 @@ int main() {
     // 1. Le entrada de construir e consultar
     // 2. Executa Métodos e conta o tempo
     // 3. Salva resultados
+
+    double tempoConstrucaoAVL = 0;
+    double tempoConstrucaoRN = 0;
+    double tempoConsultaAVL = 0;
+    double tempoConsultaRN = 0;
+
+    long long compConstrucaoRN;
+    long long compConstrucaoAVL;
+    long long compConsultaRN;
+    long long compConsultaAVL;
+
+    
+    int tamanho;
     for (string entrada : entradas){
+
         string caminhoConstr = "entrada/Construir/" + entrada;
         string caminhoConsul = "entrada/Consultar/" + entrada;
 
         vector<int> entradaConstr = lerEntrada(caminhoConstr);
         vector<int> entradaConsul = lerEntrada(caminhoConsul);
 
-        if (entradaConstr.empty() || entradaConsul.empty()){
-            cout << "Erro ao ler entradas!" << endl;
-            return 2;
+        for(int i = 0; i < 6; i++){
+
+
+            if (entradaConstr.empty() || entradaConsul.empty()){
+                cout << entradaConstr.size() << entradaConsul.size() << endl;
+                cout << "Erro ao ler entradas!" << endl;
+                return 2;
+            }
+
+            // Construção AVL
+            auto inicio = chrono::high_resolution_clock::now();
+            auto [arvoreAVL, compConstrucaoAVL] = ConstruirAVL(entradaConstr);
+            auto fim = chrono::high_resolution_clock::now();
+            if (i != 0)
+                tempoConstrucaoAVL += chrono::duration<double, milli>(fim - inicio).count();
+
+            // Consulta AVL
+            inicio = chrono::high_resolution_clock::now();
+            compConsultaAVL = ConsultarAVL(arvoreAVL, entradaConsul);
+            fim = chrono::high_resolution_clock::now();
+            if (i != 0)
+                tempoConsultaAVL += chrono::duration<double, milli>(fim - inicio).count();
+
+            // Construção Rubro-Negra
+            inicio = chrono::high_resolution_clock::now();
+            auto [arvoreRN, compConstrucaoRN] = ConstruirRN(entradaConstr);
+            fim = chrono::high_resolution_clock::now();
+            if (i != 0)
+                tempoConstrucaoRN += chrono::duration<double, milli>(fim - inicio).count();
+
+            // Consulta Rubro-Negra
+            inicio = chrono::high_resolution_clock::now();
+            compConsultaRN = ConsultarRN(arvoreRN, entradaConsul);
+            fim = chrono::high_resolution_clock::now();
+            if (i != 0)
+                tempoConsultaRN += chrono::duration<double, milli>(fim - inicio).count();
+        
+            tamanho = entradaConstr.size();
         }
+       
+               // Salvar resultados
+    
 
-        // Construção AVL
-        auto inicio = chrono::high_resolution_clock::now();
-        auto [arvoreAVL, compConstrucaoAVL] = ConstruirAVL(entradaConstr);
-        auto fim = chrono::high_resolution_clock::now();
-        double tempoConstrucaoAVL = chrono::duration<double, milli>(fim - inicio).count();
-
-        // Consulta AVL
-        inicio = chrono::high_resolution_clock::now();
-        long long compConsultaAVL = ConsultarAVL(arvoreAVL, entradaConsul);
-        fim = chrono::high_resolution_clock::now();
-        double tempoConsultaAVL = chrono::duration<double, milli>(fim - inicio).count();
-
-        // Construção Rubro-Negra
-        inicio = chrono::high_resolution_clock::now();
-        auto [arvoreRN, compConstrucaoRN] = ConstruirRubroNegra(entradaConstr);
-        fim = chrono::high_resolution_clock::now();
-        double tempoConstrucaoRN = chrono::duration<double, milli>(fim - inicio).count();
-
-        // Consulta Rubro-Negra
-        inicio = chrono::high_resolution_clock::now();
-        long long compConsultaRN = ConsultarRN(arvoreRN, entradaConsul);
-        fim = chrono::high_resolution_clock::now();
-        double tempoConsultaRN = chrono::duration<double, milli>(fim - inicio).count();
-        
-        // Salvar resultados
-        int tamanho = entradaConstr.size();
-
-        csv << tamanho << ","
-            << compConstrucaoAVL << "," << tempoConstrucaoAVL << ","
-            << compConsultaAVL   << "," << tempoConsultaAVL   << ","
-            << compConstrucaoRN  << "," << tempoConstrucaoRN  << ","
-            << compConsultaRN    << "," << tempoConsultaRN    << endl; // o endl salva no disco
-        
+    csv << tamanho << ","
+        << compConstrucaoAVL << "," << tempoConstrucaoAVL/5 << ","
+        << compConsultaAVL   << "," << tempoConsultaAVL/5   << ","
+        << compConstrucaoRN  << "," << tempoConstrucaoRN/5  << ","
+        << compConsultaRN    << "," << tempoConsultaRN/5    << endl; // o endl salva no disco 
     }
 
     csv.close();
