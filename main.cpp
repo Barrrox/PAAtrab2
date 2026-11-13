@@ -22,6 +22,33 @@ vector<int> lerEntrada(string caminho){
     return numeros;
 }
 
+struct noArvore {
+    int temp;
+};
+
+pair<noArvore, long long> ConstruirAVL(const vector<int> entrada){
+
+    noArvore raiz;
+    return make_pair(raiz, 10000);
+}
+
+pair<noArvore, long long> ConstruirRN(const vector<int> entrada){
+
+    noArvore raiz;
+    return make_pair(raiz, 10000);
+}
+
+auto ConsultarAVL(const noArvore parametro1, const vector<int> parametro2){
+
+    return 0;
+}
+
+auto ConsultarRN(const noArvore parametro1, const vector<int> parametro2){
+
+    return 0;
+}
+
+
 int main() {
 
     vector<string> entradas = {
