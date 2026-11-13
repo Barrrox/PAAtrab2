@@ -7,13 +7,13 @@
     - [] ConstruirAVL(entradaConstr);
         - Recebe vetor de inteiros entrada
         - Retorna o pair [arvoreAVL, compConstrucaoAVL] em que arvoreAVL é um ponteiro para a arvore e compConstrucaoAVL é um inteiro com o número de comparações feitas
-    - [] ConstruirArvoreRN(entradaConstr)
+    - [] ConstruirRN(entradaConstr)
         - Recebe vetor de inteiros de entrada
         - Retorna o pair [arvoreRN, compConstrucaoRN] em que arvoreRN é um ponteiro para a arvore e compConstrucaoRN é um inteiro com o número de comparações feitas
     - [] ConsultarAVL(arvoreAVL, entradaConsul)
         - Recebe o ponteiro para a arvoreAVL e o vetor de inteiros da entrada.
         - Retorna o número de comparações feitas.
-    - [] ConsultarArvoreRN(arvoreRN, entradaConsul)
+    - [] ConsultarRN(arvoreRN, entradaConsul)
         - Recebe o ponteiro para a arvoreRN e o vetor de inteiros da entrada.
         - Retorna o número de comparações feitas.
 - Main
