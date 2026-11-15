@@ -1,3 +1,6 @@
+#ifndef AVL_HPP
+#define AVL_HPP
+
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -48,9 +51,11 @@ class arvoreAVL
 private:
   node *raiz; // raiz da árvore
 public:
+  ~arvoreAVL(); // destrutor
+  void destruirAux(node* no);
   arvoreAVL() { raiz = NULL; }  // construtor
-  void inserir(int chave);  // método de inserção na árvore
-  node* inserirAux(node *no, int chave);  // método de inserção na árvore
+  void inserir(int chave, long long &comparacoes);  // método de inserção na árvore
+  node* inserirAux(node *no, int chave, long long &comparacoes);  // método de inserção na árvore
   node *getRaiz() // método de acesso a raiz da arvore
   {
     return raiz;
@@ -66,6 +71,7 @@ public:
   node* rotacaoDir(node *no); // método de rotação direita
   node* rotacaoDuploEsq(node *no); // método de rotação Left-right
   node* rotacaoDuploDir(node *no);	// método de rotação Right-left
+  bool buscar(int chave, long long &comparacoes);
 
 };
 
@@ -116,31 +122,32 @@ node* arvoreAVL::remocao(node* no, int chave) {
   no->setAltura();
 
   // Recalcular o fator de balanceamento (FB)
-  int FB = alturaEsq - alturaDir;
+  int FB = alturaDir - alturaEsq; // Slides: SAD - SAE
 
-  // Rotação para corrigir desbalanceamento
-  if (FB > 1) { // Nó está desbalanceado para a esquerda
-    int FBEsq = no->getEsq()->getEsq() ? no->getEsq()->getEsq()->getAltura() : 0;
-    int FBEsqDir = no->getEsq()->getDir() ? no->getEsq()->getDir()->getAltura() : 0;
+  // Desbalanceado para a esquerda (FB < -1)
+  if (FB < -1) {
+      int altEsqEsq = no->getEsq()->getEsq() ? no->getEsq()->getEsq()->getAltura() : 0;
+      int altEsqDir = no->getEsq()->getDir() ? no->getEsq()->getDir()->getAltura() : 0;
+      int FBEsq = altEsqDir - altEsqEsq;
 
-    if (FBEsq >= FBEsqDir) {
-      return rotacaoDir(no); // LL
-    } else {
-      no->setEsq(rotacaoEsq(no->getEsq()));
-      return rotacaoDir(no); // LR
-    }
+      if (FBEsq <= 0) {
+          return rotacaoDir(no);      // Rotação simples à direita
+      } else {
+          return rotacaoDuploDir(no); // Rotação dupla (Esq no filho + Dir no pivô)
+      }
   }
 
-  if (FB < -1) { // Nó está desbalanceado para a direita
-    int FBDirEsq = no->getDir()->getEsq() ? no->getDir()->getEsq()->getAltura() : 0;
-    int FBDir = no->getDir()->getDir() ? no->getDir()->getDir()->getAltura() : 0;
+  // Desbalanceado para a direita (FB > 1)
+  if (FB > 1) {
+      int altDirEsq = no->getDir()->getEsq() ? no->getDir()->getEsq()->getAltura() : 0;
+      int altDirDir = no->getDir()->getDir() ? no->getDir()->getDir()->getAltura() : 0;
+      int FBDir = altDirDir - altDirEsq;
 
-    if (FBDir >= FBDirEsq) {
-      return rotacaoEsq(no); // RR
-    } else {
-      no->setDir(rotacaoDir(no->getDir()));
-      return rotacaoEsq(no); // RL
-    }
+      if (FBDir >= 0) {
+          return rotacaoEsq(no);      // Rotação simples à esquerda
+      } else {
+          return rotacaoDuploEsq(no); // Rotação dupla (Dir no filho + Esq no pivô)
+      }
   }
 
   return no;
@@ -183,25 +190,30 @@ void arvoreAVL::emOrdemAux(node* no, int altura)
 
 
 
-void arvoreAVL::inserir(int chave) {
+void arvoreAVL::inserir(int chave, long long &comparacoes) {
 
   // promove alterações pela raiz
-  raiz = inserirAux(raiz, chave);
+  raiz = inserirAux(raiz, chave, comparacoes);
 }
 
-node* arvoreAVL::inserirAux(node* no, int chave) {
+node* arvoreAVL::inserirAux(node* no, int chave, long long &comparacoes) {
+  
   if (no == NULL)
       return new node(chave);
+  
+  comparacoes++;
   // valor é menor que o nó
   if (chave < no->getChave()) {
-      no->setEsq(inserirAux(no->getEsq(), chave));
+      no->setEsq(inserirAux(no->getEsq(), chave, comparacoes));
   } 
   // valor é maior que o nó
-  else if (chave > no->getChave()) {
-      no->setDir(inserirAux(no->getDir(), chave));
-  } else {
-      cout << "Esse valor já existe na árvore.\n";
-      return no;
+  else {
+      comparacoes++;
+      if (chave > no->getChave()) {
+          no->setDir(inserirAux(no->getDir(), chave, comparacoes));
+      } else {
+          return no; // Chave duplicada
+      }
   }
   
   // Fator de balanceamento do nó
@@ -209,25 +221,32 @@ node* arvoreAVL::inserirAux(node* no, int chave) {
   no->setAltura();
   int alturaEsq = no->getEsq() ? no->getEsq()->getAltura() : 0;
   int alturaDir = no->getDir() ? no->getDir()->getAltura() : 0;
-  FB = alturaEsq - alturaDir;
+  FB = alturaDir - alturaEsq; // Slides: SAD - SAE
 
-  // desbalanceado esquerda
-  if (FB > 1 && chave < no->getEsq()->getChave()) {
-      return rotacaoDir(no); // LL
+  // Desbalanceado para a esquerda (FB < -1)
+  if (FB < -1) {
+      int altEsqEsq = no->getEsq()->getEsq() ? no->getEsq()->getEsq()->getAltura() : 0;
+      int altEsqDir = no->getEsq()->getDir() ? no->getEsq()->getDir()->getAltura() : 0;
+      int FBEsq = altEsqDir - altEsqEsq;
+
+      if (FBEsq <= 0) {
+          return rotacaoDir(no);      // Rotação simples à direita
+      } else {
+          return rotacaoDuploDir(no); // Rotação dupla (Esq no filho + Dir no pivô)
+      }
   }
-  // desbalanceado esquerda-direita
-  if (FB > 1 && chave > no->getEsq()->getChave()) {
-      no->setEsq(rotacaoEsq(no->getEsq()));
-      return rotacaoDir(no); // LR
-  }
-  // desbalanceado direita
-  if (FB < -1 && chave > no->getDir()->getChave()) {
-      return rotacaoEsq(no); // RR
-  }
-  // desbalanceado direita-esquerda
-  if (FB < -1 && chave < no->getDir()->getChave()) {
-      no->setDir(rotacaoDir(no->getDir()));
-      return rotacaoEsq(no); // RL
+
+  // Desbalanceado para a direita (FB > 1)
+  if (FB > 1) {
+      int altDirEsq = no->getDir()->getEsq() ? no->getDir()->getEsq()->getAltura() : 0;
+      int altDirDir = no->getDir()->getDir() ? no->getDir()->getDir()->getAltura() : 0;
+      int FBDir = altDirDir - altDirEsq;
+
+      if (FBDir >= 0) {
+          return rotacaoEsq(no);      // Rotação simples à esquerda
+      } else {
+          return rotacaoDuploEsq(no); // Rotação dupla (Dir no filho + Esq no pivô)
+      }
   }
 
   return no;
@@ -265,30 +284,56 @@ node* arvoreAVL::rotacaoDuploDir(node* no) {
   return rotacaoDir(no);
 }
 
-
-int main() {
-    arvoreAVL avl;
-    string linha;
-
-    // Lê linha por linha da entrada padrão (stdin)
-    while (getline(cin, linha)) {
-        istringstream iss(linha); 
-        char operacao;
-        int valor;
-
-        if (!(iss >> operacao >> valor)) continue; // Ignorar linhas inválidas
-    
-      
-        if (operacao == 'i') {
-            avl.inserir(valor); // Inserir na árvore AVL
-        } else if (operacao == 'r') {
-            avl.remover(valor); // Remover da árvore AVL
-        }
-    }
-
-    // Escrever a árvore em ordem na saída padrão (stdout)
-    avl.emOrdem();
-    //cout << endl; // Para garantir que a saída seja concluída corretamente
-
-    return 0;
+arvoreAVL::~arvoreAVL() {
+  destruirAux(raiz);
 }
+
+void arvoreAVL::destruirAux(node* no) {
+  if (no != NULL) {
+    destruirAux(no->getEsq());
+    destruirAux(no->getDir());
+    delete no;
+  }
+}
+
+bool arvoreAVL::buscar(int chave, long long &comparacoes) {
+  node* atual = raiz;
+  while (atual != NULL) {
+    comparacoes++;
+    if (chave < atual->getChave()) {
+      atual = atual->getEsq();
+    } else {
+      comparacoes++;
+      if (chave > atual->getChave()) {
+        atual = atual->getDir();
+      } else {
+        return true; // Encontrou
+      }
+    }
+  }
+  return false; // Não existe na árvore
+}
+
+arvoreAVL* ConstruirAVL(const vector<int>& entrada, long long &comparacoes) {
+  arvoreAVL* arvore = new arvoreAVL();
+  comparacoes = 0;
+
+  for (int valor : entrada) {
+    arvore->inserir(valor, comparacoes);
+  }
+
+  return arvore;
+}
+
+long long ConsultarAVL(arvoreAVL* arvore, const vector<int>& entrada) {
+  long long comparacoes = 0;
+  if (arvore == NULL) return comparacoes;
+
+  for (int valor : entrada) {
+    arvore->buscar(valor, comparacoes);
+  }
+
+  return comparacoes;
+}
+
+#endif

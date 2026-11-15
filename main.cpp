@@ -3,7 +3,11 @@
 #include <vector>   // Para armazenar os números (std::vector)
 #include <string>   // Para manipular os nomes dos arquivos
 #include <chrono>   // Para calcular tempo de execução das funções
+#include "AVL.hpp"  // Arvore AVL
+#include "RB.hpp"  // Arvore Red-Black
 using namespace std;
+
+typedef long long shenlong;
 
 vector<int> lerEntrada(string caminho){
     vector<int> numeros; // Array com a entrada lida
@@ -20,32 +24,6 @@ vector<int> lerEntrada(string caminho){
     }
 
     return numeros;
-}
-
-struct noArvore {
-    int temp;
-};
-
-pair<noArvore, long long> ConstruirAVL(const vector<int> entrada){
-
-    noArvore raiz;
-    return make_pair(raiz, 10000);
-}
-
-pair<noArvore, long long> ConstruirRN(const vector<int> entrada){
-
-    noArvore raiz;
-    return make_pair(raiz, 10000);
-}
-
-auto ConsultarAVL(const noArvore parametro1, const vector<int> parametro2){
-
-    return 0;
-}
-
-auto ConsultarRN(const noArvore parametro1, const vector<int> parametro2){
-
-    return 0;
 }
 
 
@@ -96,8 +74,8 @@ int main() {
     csv << "Tamanho,"
         << "Comp_Constr_AVL,Tempo_Constr_AVL_ms,"
         << "Comp_Consul_AVL,Tempo_Consul_AVL_ms,"
-        << "Comp_Constr_RN,Tempo_Constr_RN_ms,"
-        << "Comp_Consul_RN,Tempo_Consul_RN_ms\n";
+        << "Comp_Constr_RB,Tempo_Constr_RB_ms,"
+        << "Comp_Consul_RB,Tempo_Consul_RB_ms\n";
 
     // Loop principal
     // Para cada entrada:
@@ -105,19 +83,21 @@ int main() {
     // 2. Executa Métodos e conta o tempo
     // 3. Salva resultados
 
-    double tempoConstrucaoAVL = 0;
-    double tempoConstrucaoRN = 0;
-    double tempoConsultaAVL = 0;
-    double tempoConsultaRN = 0;
+    
 
-    long long compConstrucaoRN;
-    long long compConstrucaoAVL;
-    long long compConsultaRN;
-    long long compConsultaAVL;
+    shenlong compConstrucaoRB;
+    shenlong compConstrucaoAVL;
+    shenlong compConsultaRB;
+    shenlong compConsultaAVL;
 
     
     int tamanho;
     for (string entrada : entradas){
+
+        double tempoConstrucaoAVL = 0;
+        double tempoConstrucaoRB = 0;
+        double tempoConsultaAVL = 0;
+        double tempoConsultaRB = 0;
 
         string caminhoConstr = "entrada/Construir/" + entrada;
         string caminhoConsul = "entrada/Consultar/" + entrada;
@@ -136,33 +116,42 @@ int main() {
 
             // Construção AVL
             auto inicio = chrono::high_resolution_clock::now();
-            auto [arvoreAVL, compConstrucaoAVL] = ConstruirAVL(entradaConstr);
+            arvoreAVL* noAVL = ConstruirAVL(entradaConstr, compConstrucaoAVL);
             auto fim = chrono::high_resolution_clock::now();
             if (i != 0)
                 tempoConstrucaoAVL += chrono::duration<double, milli>(fim - inicio).count();
 
+
             // Consulta AVL
             inicio = chrono::high_resolution_clock::now();
-            compConsultaAVL = ConsultarAVL(arvoreAVL, entradaConsul);
+            compConsultaAVL = ConsultarAVL(noAVL, entradaConsul);
             fim = chrono::high_resolution_clock::now();
             if (i != 0)
                 tempoConsultaAVL += chrono::duration<double, milli>(fim - inicio).count();
+            
+            
+            
+            delete noAVL;
 
             // Construção Rubro-Negra
             inicio = chrono::high_resolution_clock::now();
-            auto [arvoreRN, compConstrucaoRN] = ConstruirRN(entradaConstr);
+            arvoreRB *noRB = ConstruirRB(entradaConstr, compConstrucaoRB);
             fim = chrono::high_resolution_clock::now();
             if (i != 0)
-                tempoConstrucaoRN += chrono::duration<double, milli>(fim - inicio).count();
+                tempoConstrucaoRB += chrono::duration<double, milli>(fim - inicio).count();
 
             // Consulta Rubro-Negra
             inicio = chrono::high_resolution_clock::now();
-            compConsultaRN = ConsultarRN(arvoreRN, entradaConsul);
+            compConsultaRB = ConsultarRB(noRB, entradaConsul);
             fim = chrono::high_resolution_clock::now();
             if (i != 0)
-                tempoConsultaRN += chrono::duration<double, milli>(fim - inicio).count();
+                tempoConsultaRB += chrono::duration<double, milli>(fim - inicio).count();
         
             tamanho = entradaConstr.size();
+
+
+
+            delete noRB;
         }
        
                // Salvar resultados
@@ -171,8 +160,8 @@ int main() {
     csv << tamanho << ","
         << compConstrucaoAVL << "," << tempoConstrucaoAVL/5 << ","
         << compConsultaAVL   << "," << tempoConsultaAVL/5   << ","
-        << compConstrucaoRN  << "," << tempoConstrucaoRN/5  << ","
-        << compConsultaRN    << "," << tempoConsultaRN/5    << endl; // o endl salva no disco 
+        << compConstrucaoRB  << "," << tempoConstrucaoRB/5  << ","
+        << compConsultaRB    << "," << tempoConsultaRB/5    << endl; // o endl salva no disco 
     }
 
     csv.close();
