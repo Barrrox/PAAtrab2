@@ -55,7 +55,7 @@ public:
   void destruirAux(nodeRB* no);
   arvoreRB() { raiz = NULL; }  // construtor
   void inserir(int chave, long long &comparacoes);  // método de inserção na árvore
-  nodeRB* inserirAux(nodeRB *no, int chave, long long &comparacoes);  // método de inserção na árvore
+  nodeRB* inserirAux(nodeRB *no, int chave, long long &comparacoes, bool &corrigir);  // método de inserção na árvore
   nodeRB *getRaiz() // método de acesso a raiz da arvore
   {
     return raiz;
@@ -97,69 +97,90 @@ void arvoreRB::emOrdemAux(nodeRB* no, int altura)
 
 void arvoreRB::inserir(int chave, long long &comparacoes) {
 
+  bool corrigir = false; // indica se ainda pode haver violação acima
+
   // promove alterações pela raiz
-  raiz = inserirAux(raiz, chave, comparacoes);
+  raiz = inserirAux(raiz, chave, comparacoes, corrigir);
 
   // raiz é sempre preta
   raiz->setCor(PRETO);
 }
 
-nodeRB* arvoreRB::inserirAux(nodeRB* no, int chave, long long &comparacoes) {
-  if (no == NULL)
+nodeRB* arvoreRB::inserirAux(nodeRB* no, int chave, long long &comparacoes, bool &corrigir) {
+  if (no == NULL) {
+      corrigir = true; // nó novo vermelho pode violar a regra com o pai
       return new nodeRB(chave);
+  }
+
+  bool desceuEsq;
 
   comparacoes++;
   // valor é menor que o nó
   if (chave < no->getChave()) {
-      no->setEsq(inserirAux(no->getEsq(), chave, comparacoes));
+      no->setEsq(inserirAux(no->getEsq(), chave, comparacoes, corrigir));
+      desceuEsq = true;
   }
   // valor é maior que o nó
   else {
       comparacoes++;
       if (chave > no->getChave()) {
-          no->setDir(inserirAux(no->getDir(), chave, comparacoes));
+          no->setDir(inserirAux(no->getDir(), chave, comparacoes, corrigir));
+          desceuEsq = false;
       } else {
-          return no; // Chave duplicada
+          return no; // Chave duplicada (corrigir continua false)
       }
   }
 
-  // Filho esquerdo e neto vermelhos (violação à esquerda)
-  if (ehVermelho(no->getEsq()) && (ehVermelho(no->getEsq()->getEsq()) || ehVermelho(no->getEsq()->getDir()))) {
+  // Correção já terminou abaixo: apenas retorna
+  if (!corrigir)
+      return no;
 
-      // Caso 01: Tio vermelho, apenas recolore
-      if (ehVermelho(no->getDir())) {
-          no->setCor(VERMELHO);
-          no->getEsq()->setCor(PRETO);
-          no->getDir()->setCor(PRETO);
-          return no;
+  // Violação à esquerda (só verifica se veio da esquerda)
+  if (desceuEsq) {
+      if (ehVermelho(no->getEsq()) && (ehVermelho(no->getEsq()->getEsq()) || ehVermelho(no->getEsq()->getDir()))) {
+
+          // Caso 01: Tio vermelho, recolore e propaga (corrigir continua true)
+          if (ehVermelho(no->getDir())) {
+              no->setCor(VERMELHO);
+              no->getEsq()->setCor(PRETO);
+              no->getDir()->setCor(PRETO);
+              return no;
+          }
+
+          // Caso 02: Tio preto, rotação encerra a correção
+          corrigir = false;
+          if (ehVermelho(no->getEsq()->getEsq())) {
+              return rotacaoDir(no);      // Rotação simples à direita
+          } else {
+              return rotacaoDuploDir(no); // Rotação dupla (Esq no filho + Dir no pivô)
+          }
       }
+  }
+  // Violação à direita (só verifica se veio da direita)
+  else {
+      if (ehVermelho(no->getDir()) && (ehVermelho(no->getDir()->getDir()) || ehVermelho(no->getDir()->getEsq()))) {
 
-      // Caso 02: Tio preto
-      if (ehVermelho(no->getEsq()->getEsq())) {
-          return rotacaoDir(no);      // Rotação simples à direita
-      } else {
-          return rotacaoDuploDir(no); // Rotação dupla (Esq no filho + Dir no pivô)
+          // Caso 01: Tio vermelho, recolore e propaga (corrigir continua true)
+          if (ehVermelho(no->getEsq())) {
+              no->setCor(VERMELHO);
+              no->getEsq()->setCor(PRETO);
+              no->getDir()->setCor(PRETO);
+              return no;
+          }
+
+          // Caso 02: Tio preto, rotação encerra a correção
+          corrigir = false;
+          if (ehVermelho(no->getDir()->getDir())) {
+              return rotacaoEsq(no);      // Rotação simples à esquerda
+          } else {
+              return rotacaoDuploEsq(no); // Rotação dupla (Dir no filho + Esq no pivô)
+          }
       }
   }
 
-  // Filho direito e neto vermelhos (violação à direita)
-  if (ehVermelho(no->getDir()) && (ehVermelho(no->getDir()->getDir()) || ehVermelho(no->getDir()->getEsq()))) {
-
-      // Caso 01: Tio vermelho, apenas recolore
-      if (ehVermelho(no->getEsq())) {
-          no->setCor(VERMELHO);
-          no->getEsq()->setCor(PRETO);
-          no->getDir()->setCor(PRETO);
-          return no;
-      }
-
-      // Caso 02: Tio preto
-      if (ehVermelho(no->getDir()->getDir())) {
-          return rotacaoEsq(no);      // Rotação simples à esquerda
-      } else {
-          return rotacaoDuploEsq(no); // Rotação dupla (Dir no filho + Esq no pivô)
-      }
-  }
+  // Sem violação neste nível: só pode haver problema acima se este nó for vermelho
+  if (!ehVermelho(no))
+      corrigir = false;
 
   return no;
 }
