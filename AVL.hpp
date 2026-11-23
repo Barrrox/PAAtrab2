@@ -208,7 +208,6 @@ node* arvoreAVL::inserirAux(node* no, int chave, long long &comparacoes) {
   } 
   // valor é maior que o nó
   else {
-      comparacoes++;
       if (chave > no->getChave()) {
           no->setDir(inserirAux(no->getDir(), chave, comparacoes));
       } else {
@@ -303,7 +302,6 @@ bool arvoreAVL::buscar(int chave, long long &comparacoes) {
     if (chave < atual->getChave()) {
       atual = atual->getEsq();
     } else {
-      comparacoes++;
       if (chave > atual->getChave()) {
         atual = atual->getDir();
       } else {
